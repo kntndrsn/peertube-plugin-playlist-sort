@@ -1,0 +1,46 @@
+#custom-css .playlist-buttons:has(.playlist-sort-btn) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Variable fallbacks cover PeerTube 7+ names first, then PeerTube 6 names */
+#custom-css .playlist-sort-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: 100%;
+  min-height: 2rem;
+  padding: 0.25rem 1rem;
+  border: 0;
+  border-radius: 4px;
+  background-color: var(--greyBackgroundColor);
+  color: var(--greyForegroundColor);
+  font: inherit;
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: start;
+  cursor: pointer;
+  margin-left: 10px;
+}
+
+#custom-css .playlist-sort-btn:hover:not(:disabled) {
+  filter: brightness(0.92);
+}
+
+#custom-css .playlist-sort-btn:focus-visible {
+  outline: 2px solid var(--primary, var(--mainColor, #f2690d));
+  outline-offset: 2px;
+}
+
+#custom-css .playlist-sort-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+#custom-css .playlist-sort-btn svg {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+}

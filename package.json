@@ -1,7 +1,7 @@
 {
   "name": "peertube-plugin-playlist-sort",
   "description": "Adds a button to sort playlist videos by original publish date (newest first)",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "license": "MIT",
   "author": "Kent Anderson <kntndrsn@gmail.com>",
   "bugs": "https://github.com/kntndrsn/peertube-plugin-playlist-sort/issues",
@@ -21,7 +21,9 @@
   },
   "library": "./main.js",
   "staticDirs": {},
-  "css": [],
+  "css": [
+    "assets/style.css"
+  ],
   "clientScripts": [
     {
       "script": "client/common-client-plugin.js",

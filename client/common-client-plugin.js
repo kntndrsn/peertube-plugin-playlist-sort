@@ -55,19 +55,38 @@ function waitForButtons (helpers, doAction) {
 }
 
 function injectButton (container, helpers, doAction) {
-  // Copy the existing button style since class names differ between PeerTube 6 and 7+
-  const reference = container.querySelector('.peertube-button')
-
   const button = document.createElement('button')
   button.type = 'button'
-  button.className = (reference ? reference.className : 'peertube-button secondary-button') + ' ' + BUTTON_CLASS
-  button.textContent = 'Sort by date (newest first)'
-  button.addEventListener('click', () => onClick(button, helpers, doAction))
+  button.className = BUTTON_CLASS
+
+  const label = document.createElement('span')
+  label.textContent = 'Sort by date (newest first)'
+
+  button.append(createSortIcon(), label)
+  button.addEventListener('click', () => onClick(button, label, helpers, doAction))
 
   container.appendChild(button)
 }
 
-function onClick (button, helpers, doAction) {
+function createSortIcon () {
+  const ns = 'http://www.w3.org/2000/svg'
+  const svg = document.createElementNS(ns, 'svg')
+  svg.setAttribute('viewBox', '0 0 24 24')
+  svg.setAttribute('fill', 'none')
+  svg.setAttribute('stroke', 'currentColor')
+  svg.setAttribute('stroke-width', '2')
+  svg.setAttribute('stroke-linecap', 'round')
+  svg.setAttribute('stroke-linejoin', 'round')
+  svg.setAttribute('aria-hidden', 'true')
+
+  const path = document.createElementNS(ns, 'path')
+  path.setAttribute('d', 'M3 6h11M3 12h8M3 18h5M18 5v14M15 16l3 3 3-3')
+  svg.appendChild(path)
+
+  return svg
+}
+
+function onClick (button, label, helpers, doAction) {
   const playlistId = getPlaylistId()
   if (!playlistId || button.disabled) return
 
@@ -76,12 +95,12 @@ function onClick (button, helpers, doAction) {
     content: '<p>This will permanently reorder the videos of this playlist from newest to oldest, using the original publication date when available. Continue?</p>',
     close: true,
     cancel: { value: 'Cancel' },
-    confirm: { value: 'Sort', action: () => sortPlaylist(playlistId, button, helpers, doAction) }
+    confirm: { value: 'Sort', action: () => sortPlaylist(playlistId, button, label, helpers, doAction) }
   })
 }
 
-async function sortPlaylist (playlistId, button, helpers, doAction) {
-  const originalText = button.textContent
+async function sortPlaylist (playlistId, button, label, helpers, doAction) {
+  const originalText = label.textContent
   let moves = 0
 
   button.disabled = true
@@ -100,7 +119,7 @@ async function sortPlaylist (playlistId, button, helpers, doAction) {
       order.splice(i, 0, order.splice(from, 1)[0])
       moves++
 
-      button.textContent = `${originalText} (${i + 1}/${target.length})`
+      label.textContent = `${originalText} (${i + 1}/${target.length})`
     }
 
     if (moves === 0) {
@@ -115,7 +134,7 @@ async function sortPlaylist (playlistId, button, helpers, doAction) {
     console.error('[playlist-sort] Sorting failed', err)
     helpers.notifier.error(`Sorting failed after ${moves} move(s): ${err.message}`)
     button.disabled = false
-    button.textContent = originalText
+    label.textContent = originalText
   } finally {
     if (doAction) doAction('application:decrement-loader')
   }
