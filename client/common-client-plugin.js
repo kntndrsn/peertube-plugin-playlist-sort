@@ -23,10 +23,6 @@ function register ({ registerHook, peertubeHelpers, doAction }) {
   onNavigation()
 }
 
-function translate (helpers, text) {
-  return helpers.translate(text).catch(() => text)
-}
-
 function getPlaylistId () {
   const match = window.location.pathname.match(ROUTE_RE)
   return match ? decodeURIComponent(match[1]) : null
@@ -66,46 +62,33 @@ function injectButton (container, helpers, doAction) {
   button.type = 'button'
   button.className = (reference ? reference.className : 'peertube-button secondary-button') + ' ' + BUTTON_CLASS
   button.textContent = 'Sort by date (newest first)'
-
-  translate(helpers, button.textContent).then(label => { button.textContent = label })
-
   button.addEventListener('click', () => onClick(button, helpers, doAction))
 
   container.appendChild(button)
 }
 
-async function onClick (button, helpers, doAction) {
+function onClick (button, helpers, doAction) {
   const playlistId = getPlaylistId()
   if (!playlistId || button.disabled) return
 
-  const [ title, content, cancel, confirm ] = await Promise.all([
-    'Sort playlist',
-    'This will permanently reorder the videos of this playlist from newest to oldest, using the original publication date when available. Continue?',
-    'Cancel',
-    'Sort'
-  ].map(s => translate(helpers, s)))
-
   helpers.showModal({
-    title,
-    content: `<p>${content}</p>`,
+    title: 'Sort playlist',
+    content: '<p>This will permanently reorder the videos of this playlist from newest to oldest, using the original publication date when available. Continue?</p>',
     close: true,
-    cancel: { value: cancel },
-    confirm: { value: confirm, action: () => sortPlaylist(playlistId, button, helpers, doAction) }
+    cancel: { value: 'Cancel' },
+    confirm: { value: 'Sort', action: () => sortPlaylist(playlistId, button, helpers, doAction) }
   })
 }
 
 async function sortPlaylist (playlistId, button, helpers, doAction) {
   const originalText = button.textContent
   let moves = 0
-  let reloading = false
 
   button.disabled = true
   if (doAction) doAction('application:increment-loader')
 
   try {
-    const current = (await fetchAllElements(playlistId, helpers))
-      .sort((a, b) => a.position - b.position)
-
+    const current = await fetchAllElements(playlistId, helpers)
     const target = sortByPublishDate(current)
     const order = current.map(e => e.id)
 
@@ -121,23 +104,20 @@ async function sortPlaylist (playlistId, button, helpers, doAction) {
     }
 
     if (moves === 0) {
-      helpers.notifier.info(await translate(helpers, 'Playlist is already sorted.'))
+      helpers.notifier.info('Playlist is already sorted.')
+      button.disabled = false
       return
     }
 
-    helpers.notifier.success(await translate(helpers, 'Playlist sorted.'))
-    reloading = true
+    helpers.notifier.success('Playlist sorted.')
     window.location.reload()
   } catch (err) {
     console.error('[playlist-sort] Sorting failed', err)
     helpers.notifier.error(`Sorting failed after ${moves} move(s): ${err.message}`)
+    button.disabled = false
+    button.textContent = originalText
   } finally {
     if (doAction) doAction('application:decrement-loader')
-
-    if (!reloading) {
-      button.disabled = false
-      button.textContent = originalText
-    }
   }
 }
 
@@ -151,16 +131,16 @@ function getPublishTime (element) {
 
 // Newest first; elements without a usable date (e.g. deleted videos) go last, keeping their order
 function sortByPublishDate (elements) {
-  return elements
-    .map((element, index) => ({ element, index, time: getPublishTime(element) }))
-    .sort((a, b) => {
-      if (a.time === null && b.time === null) return a.index - b.index
-      if (a.time === null) return 1
-      if (b.time === null) return -1
+  return [ ...elements ].sort((a, b) => {
+    const timeA = getPublishTime(a)
+    const timeB = getPublishTime(b)
 
-      return (b.time - a.time) || (a.index - b.index)
-    })
-    .map(item => item.element)
+    if (timeA === timeB) return 0
+    if (timeA === null) return 1
+    if (timeB === null) return -1
+
+    return timeB - timeA
+  })
 }
 
 async function fetchAllElements (playlistId, helpers) {
@@ -168,8 +148,10 @@ async function fetchAllElements (playlistId, helpers) {
   let total = Infinity
 
   while (elements.length < total) {
-    const query = new URLSearchParams({ start: String(elements.length), count: String(PAGE_SIZE) })
-    const body = await apiRequest(helpers, `/api/v1/video-playlists/${encodeURIComponent(playlistId)}/videos?${query}`)
+    const body = await apiRequest(
+      helpers,
+      `/api/v1/video-playlists/${encodeURIComponent(playlistId)}/videos?start=${elements.length}&count=${PAGE_SIZE}`
+    )
 
     total = body.total
     if (!body.data || body.data.length === 0) break

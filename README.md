@@ -6,11 +6,9 @@ Videos are ordered by their original publication date when set, otherwise by the
 
 Requires PeerTube >= 6.0.0.
 
-## Development
+## Install from path
 
 ```sh
-npm install
-npm run build
 peertube-cli plugins install --path /absolute/path/to/peertube-plugin-playlist-sort
 ```
 

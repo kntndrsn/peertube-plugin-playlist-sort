@@ -21,28 +21,14 @@
   },
   "library": "./main.js",
   "staticDirs": {},
-  "css": [
-    "assets/style.css"
-  ],
+  "css": [],
   "clientScripts": [
     {
-      "script": "dist/common-client-plugin.js",
+      "script": "client/common-client-plugin.js",
       "scopes": [
         "common"
       ]
     }
   ],
-  "translations": {},
-  "files": [
-    "main.js",
-    "dist",
-    "assets"
-  ],
-  "scripts": {
-    "build": "node build.js",
-    "prepare": "npm run build"
-  },
-  "devDependencies": {
-    "esbuild": "^0.25.0"
-  }
+  "translations": {}
 }
